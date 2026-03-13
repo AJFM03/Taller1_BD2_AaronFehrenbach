@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Gestión Legal</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Raleway:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #9a7d2e;
+    --gold-light: #c9a84c;
+    --gold-dark: #7a6020;
+    --amber: #f0a500;
+    --dark: #2c2c2c;
+    --gray-dark: #555;
+    --gray-mid: #888;
+    --gray-light: #e8e8e8;
+    --gray-bg: #f4f4f4;
+    --white: #ffffff;
+    --sidebar-w: 210px;
+    --topbar-h: 52px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.10);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Lato', sans-serif;
+    background: #1a1a1a;
+    color: var(--dark);
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── TOP BAR ───────────────────────────────── */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: var(--topbar-h);
+    background: #1a1a1a;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px;
+    z-index: 100;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 14px; }
+  .hamburger { background: none; border: none; cursor: pointer; padding: 4px; }
+  .hamburger span {
+    display: block; width: 22px; height: 2px;
+    background: var(--gray-light); margin: 4px 0; border-radius: 2px;
+    transition: all .3s;
+  }
+  .logo-text {
+    font-family: 'Raleway', sans-serif;
+    color: var(--gold-light);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .user-name { color: #ccc; font-size: .85rem; }
+  .btn-logout {
+    background: none; border: none; cursor: pointer;
+    color: var(--gray-mid); font-size: .8rem;
+    display: flex; align-items: center; gap: 5px;
+    transition: color .2s;
+  }
+  .btn-logout:hover { color: var(--gold-light); }
+  .btn-logout svg { width: 14px; height: 14px; }
+
+  /* ── LAYOUT ────────────────────────────────── */
+  .layout {
+    display: flex;
+    height: 100vh;
+    padding-top: var(--topbar-h);
+  }
+
+  /* ── SIDEBAR ───────────────────────────────── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--white);
+    border-right: 1px solid var(--gray-light);
+    flex-shrink: 0;
+    display: flex; flex-direction: column;
+    padding-top: 18px;
+    transition: width .3s;
+    overflow: hidden;
+  }
+  .sidebar-section { margin-bottom: 6px; }
+  .sidebar-label {
+    font-size: .68rem; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--gray-mid);
+    padding: 4px 18px 2px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 18px;
+    cursor: pointer; font-size: .88rem;
+    color: var(--gray-dark);
+    border-left: 3px solid transparent;
+    transition: all .2s;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .nav-item:hover { background: #faf6ee; color: var(--gold); border-left-color: var(--gold-light); }
+  .nav-item.active { background: #faf6ee; color: var(--gold-dark); border-left-color: var(--gold); font-weight: 700; }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .sidebar-divider { height: 1px; background: var(--gray-light); margin: 8px 0; }
+
+  /* ── MAIN CONTENT ──────────────────────────── */
+  .main {
+    flex: 1; overflow-y: auto;
+    background: var(--gray-bg);
+    padding: 32px 36px;
+  }
+
+  /* ── VIEWS ─────────────────────────────────── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── PAGE HEADER ───────────────────────────── */
+  .page-title {
+    font-family: 'Raleway', sans-serif;
+    font-size: 1.9rem; font-weight: 600;
+    color: var(--dark); margin-bottom: 4px;
+  }
+  .page-subtitle { font-size: .9rem; color: var(--gray-mid); margin-bottom: 28px; }
+
+  /* ── AGENDA GRID ───────────────────────────── */
+  .agenda-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 28px;
+    align-items: start;
+  }
+
+  /* ── TABLE ─────────────────────────────────── */
+  .card {
+    background: var(--white);
+    border-radius: 4px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 10px 16px;
+    text-align: left;
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--gray-mid);
+    border-bottom: 2px solid var(--gray-light);
+    background: #fafafa;
+  }
+  tbody tr { border-bottom: 1px solid #f0f0f0; transition: background .15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #fdfaf4; }
+  tbody td { padding: 11px 16px; font-size: .88rem; color: var(--dark); }
+  .badge {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 20px; font-size: .72rem; font-weight: 700;
+  }
+  .badge-pendiente { background: #fff3cd; color: #856404; }
+  .badge-en_curso  { background: #d1ecf1; color: #0c5460; }
+  .badge-cerrado   { background: #e2e3e5; color: #383d41; }
+
+  /* ── CALENDAR ──────────────────────────────── */
+  .calendar {
+    background: var(--white);
+    border-radius: 4px;
+    box-shadow: var(--shadow);
+    padding: 18px;
+    user-select: none;
+  }
+  .cal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .cal-title {
+    font-family: 'Raleway', sans-serif;
+    font-size: .95rem; font-weight: 700;
+    color: var(--dark);
+  }
+  .cal-nav {
+    background: none; border: none; cursor: pointer;
+    color: var(--gray-mid); font-size: 1.1rem;
+    padding: 2px 6px; border-radius: 3px;
+    transition: color .2s;
+  }
+  .cal-nav:hover { color: var(--gold); }
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+  .cal-dow {
+    text-align: center; font-size: .7rem; font-weight: 700;
+    color: var(--gray-mid); padding: 4px 0;
+  }
+  .cal-day {
+    text-align: center; padding: 6px 2px;
+    font-size: .82rem; cursor: pointer;
+    border-radius: 4px; transition: all .15s;
+    color: var(--dark);
+  }
+  .cal-day:hover { background: #faf6ee; color: var(--gold); }
+  .cal-day.other-month { color: #ccc; }
+  .cal-day.today { background: var(--gold); color: white; font-weight: 700; }
+  .cal-day.selected { background: var(--gold-dark); color: white; font-weight: 700; }
+  .cal-day.has-event::after {
+    content: ''; display: block;
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--amber); margin: 1px auto 0;
+  }
+
+  /* ── STAT CARDS ────────────────────────────── */
+  .stats-row {
+    display: flex; gap: 16px;
+    margin-top: 24px;
+  }
+  .stat-card {
+    flex: 1; border-radius: 4px;
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 14px;
+    cursor: pointer; transition: filter .2s;
+  }
+  .stat-card:hover { filter: brightness(1.08); }
+  .stat-card.pending  { background: var(--gold-dark); }
+  .stat-card.ongoing  { background: var(--amber); }
+  .stat-card.closed   { background: #555; }
+  .stat-icon { opacity: .85; }
+  .stat-icon svg { width: 28px; height: 28px; }
+  .stat-info { color: white; }
+  .stat-label { font-size: .75rem; opacity: .9; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+  .stat-value { font-size: 1.8rem; font-weight: 700; line-height: 1.1; }
+
+  /* ── FAB ────────────────────────────────────── */
+  .fab {
+    position: fixed; bottom: 28px; right: 28px;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--gold); border: none;
+    color: white; font-size: 1.6rem;
+    cursor: pointer; box-shadow: 0 4px 16px rgba(154,125,46,.5);
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s; z-index: 200;
+  }
+  .fab:hover { background: var(--gold-dark); transform: scale(1.08); }
+
+  /* ── LOGIN PAGE ─────────────────────────────── */
+  .login-bg {
+    position: fixed; inset: 0;
+    background: #2a2a2a;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+  }
+  .login-card {
+    background: white;
+    border: 2px solid var(--gold-light);
+    border-radius: 8px;
+    padding: 40px 36px 32px;
+    width: 360px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.4);
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+  }
+  .login-logo {
+    font-family: 'Raleway', sans-serif;
+    font-size: 1rem; color: var(--gold); font-weight: 700;
+    letter-spacing: 2px; text-align: center;
+    border-bottom: 1px solid var(--gray-light);
+    width: 100%; padding-bottom: 14px; margin-bottom: 4px;
+  }
+  .login-title {
+    font-family: 'Raleway', sans-serif;
+    font-size: 1rem; font-weight: 700;
+    color: var(--gold); letter-spacing: 1px;
+  }
+  .login-input {
+    width: 100%; padding: 11px 14px;
+    border: 1.5px solid var(--gold-light);
+    border-radius: 4px; font-size: .88rem;
+    font-family: 'Lato', sans-serif;
+    color: var(--dark); background: white;
+    outline: none; transition: border-color .2s;
+  }
+  .login-input:focus { border-color: var(--gold); }
+  .login-input::placeholder { color: #bbb; letter-spacing: .5px; }
+  .login-btn {
+    width: 100%; padding: 12px;
+    background: var(--dark); color: white;
+    border: none; border-radius: 4px;
+    font-family: 'Raleway', sans-serif;
+    font-size: .82rem; font-weight: 700;
+    letter-spacing: 1.5px; cursor: pointer;
+    transition: background .2s;
+    margin-top: 2px;
+  }
+  .login-btn:hover { background: var(--gold-dark); }
+  .login-forgot {
+    font-size: .72rem; color: var(--gray-mid);
+    letter-spacing: .8px; cursor: pointer;
+    text-transform: uppercase;
+    transition: color .2s;
+  }
+  .login-forgot:hover { color: var(--gold); }
+
+  /* ── MODAL ──────────────────────────────────── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 500;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white; border-radius: 6px;
+    padding: 28px; width: 460px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.3);
+  }
+  .modal-title {
+    font-family: 'Raleway', sans-serif;
+    font-size: 1.1rem; font-weight: 700;
+    color: var(--gold-dark); margin-bottom: 20px;
+    border-bottom: 2px solid var(--gold-light);
+    padding-bottom: 10px;
+  }
+  .form-row { display: flex; gap: 12px; margin-bottom: 12px; }
+  .form-group { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .form-label { font-size: .74rem; font-weight: 700; color: var(--gray-mid); text-transform: uppercase; letter-spacing: .6px; }
+  .form-control {
+    padding: 9px 12px; border: 1.5px solid var(--gray-light);
+    border-radius: 4px; font-size: .85rem;
+    font-family: 'Lato', sans-serif; color: var(--dark);
+    outline: none; transition: border-color .2s;
+  }
+  .form-control:focus { border-color: var(--gold); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+  .btn { padding: 9px 20px; border-radius: 4px; border: none; cursor: pointer; font-size: .83rem; font-weight: 700; font-family: 'Raleway', sans-serif; letter-spacing: .5px; transition: all .2s; }
+  .btn-primary { background: var(--gold); color: white; }
+  .btn-primary:hover { background: var(--gold-dark); }
+  .btn-secondary { background: var(--gray-light); color: var(--gray-dark); }
+  .btn-secondary:hover { background: #ddd; }
+
+  /* ── REPORTES ───────────────────────────────── */
+  .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .report-card { background: white; border-radius: 4px; box-shadow: var(--shadow); padding: 20px; }
+  .report-card-title { font-family: 'Raleway', sans-serif; font-size: .9rem; font-weight: 700; color: var(--dark); margin-bottom: 14px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .bar-label { font-size: .78rem; color: var(--gray-dark); width: 140px; flex-shrink: 0; }
+  .bar-track { flex: 1; background: var(--gray-light); border-radius: 20px; height: 10px; }
+  .bar-fill { height: 10px; border-radius: 20px; background: var(--gold); transition: width .8s; }
+  .bar-val { font-size: .78rem; font-weight: 700; color: var(--gray-dark); width: 30px; text-align: right; }
+
+  /* ── SEARCH BAR ─────────────────────────────── */
+  .search-row { display: flex; gap: 10px; margin-bottom: 18px; align-items: center; }
+  .search-input {
+    padding: 9px 14px; border: 1.5px solid var(--gray-light);
+    border-radius: 4px; font-size: .85rem; width: 260px;
+    font-family: 'Lato', sans-serif; outline: none;
+    transition: border-color .2s;
+  }
+  .search-input:focus { border-color: var(--gold); }
+  .filter-select {
+    padding: 9px 12px; border: 1.5px solid var(--gray-light);
+    border-radius: 4px; font-size: .83rem;
+    font-family: 'Lato', sans-serif; outline: none; cursor: pointer;
+    transition: border-color .2s; color: var(--dark);
+  }
+  .filter-select:focus { border-color: var(--gold); }
+
+  /* scrollbar */
+  .main::-webkit-scrollbar { width: 5px; }
+  .main::-webkit-scrollbar-track { background: transparent; }
+  .main::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ════════════════════════════════════════════════ -->
+<div class="login-bg" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">⚖ LEXGEST</div>
+    <div class="login-title">INGRESAR A CUENTA</div>
+    <input class="login-input" type="text" id="loginUser" placeholder="USUARIO" />
+    <input class="login-input" type="password" id="loginPass" placeholder="CONTRASEÑA" />
+    <button class="login-btn" onclick="doLogin()">INGRESAR A CUENTA</button>
+    <span class="login-forgot">OLVIDASTE TU CONTRASEÑA</span>
+  </div>
+</div>
+
+<!-- ══ APP ═══════════════════════════════════════════════════ -->
+<div id="app" style="display:none;">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" onclick="toggleSidebar()">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="logo-text">⚖ LEXGEST</span>
+    </div>
+    <div class="topbar-right">
+      <span class="user-name">Lic. Juan Pérez</span>
+      <button class="btn-logout" onclick="logout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Salir
+      </button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-section">
+        <a class="nav-item active" onclick="showView('agenda')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Inicio
+        </a>
+        <a class="nav-item" onclick="showView('expedientes')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Expedientes
+        </a>
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section">
+        <a class="nav-item" onclick="showView('reportes')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Reportes
+        </a>
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Configuración</div>
+        <a class="nav-item" onclick="showView('aseguradoras')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Aseguradora
+        </a>
+        <a class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Usuarios
+        </a>
+        <a class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 22 3 12 10 12 10 22"/><polyline points="10 7 10 2 21 2 21 22"/><line x1="14" y1="6" x2="14" y2="6.01"/><line x1="17" y1="6" x2="17" y2="6.01"/><line x1="14" y1="10" x2="14" y2="10.01"/><line x1="17" y1="10" x2="17" y2="10.01"/><line x1="14" y1="14" x2="14" y2="14.01"/><line x1="17" y1="14" x2="17" y2="14.01"/></svg>
+          Juzgado
+        </a>
+      </div>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- ── AGENDA ── -->
+      <div class="view active" id="view-agenda">
+        <div class="page-title">Agenda del día</div>
+        <div class="page-subtitle" id="agendaDateLabel">Martes 7 de enero de 2019</div>
+
+        <div class="agenda-grid">
+          <!-- Table -->
+          <div class="card">
+            <table>
+              <thead>
+                <tr>
+                  <th>ASEGURADORA</th>
+                  <th>ASEGURADO</th>
+                  <th>JUZGADO</th>
+                  <th>HORA</th>
+                </tr>
+              </thead>
+              <tbody id="agendaTableBody"></tbody>
+            </table>
+          </div>
+
+          <!-- Calendar -->
+          <div class="calendar">
+            <div class="cal-header">
+              <button class="cal-nav" onclick="changeMonth(-1)">&#8249;</button>
+              <div class="cal-title" id="calMonthLabel">January 2019</div>
+              <button class="cal-nav" onclick="changeMonth(1)">&#8250;</button>
+            </div>
+            <div class="cal-grid" id="calGrid"></div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+          <div class="stat-card pending">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">Pendientes</div>
+              <div class="stat-value">102</div>
+            </div>
+          </div>
+          <div class="stat-card ongoing">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="18" y2="12"/><line x1="9" y1="15" x2="18" y2="6"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">En Curso</div>
+              <div class="stat-value">72</div>
+            </div>
+          </div>
+          <div class="stat-card closed">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">Cerrados</div>
+              <div class="stat-value">204</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── EXPEDIENTES ── -->
+      <div class="view" id="view-expedientes">
+        <div class="page-title">Expedientes</div>
+        <div class="page-subtitle" style="margin-bottom:20px;">Gestión de expedientes legales</div>
+        <div class="search-row">
+          <input class="search-input" type="text" placeholder="Buscar expediente..." oninput="filterExpedientes(this.value)"/>
+          <select class="filter-select" onchange="filterByEstado(this.value)">
+            <option value="">Todos los estados</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="en_curso">En Curso</option>
+            <option value="cerrado">Cerrado</option>
+          </select>
+        </div>
+        <div class="card">
+          <table>
+            <thead>
+              <tr>
+                <th>N° Expediente</th>
+                <th>Cliente</th>
+                <th>Aseguradora</th>
+                <th>Juzgado</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody id="expTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── REPORTES ── -->
+      <div class="view" id="view-reportes">
+        <div class="page-title">Reportes</div>
+        <div class="page-subtitle" style="margin-bottom:20px;">Resumen estadístico del sistema</div>
+        <div class="report-grid">
+          <div class="report-card">
+            <div class="report-card-title">Expedientes por Estado</div>
+            <div class="bar-row"><span class="bar-label">Pendientes</span><div class="bar-track"><div class="bar-fill" style="width:27%"></div></div><span class="bar-val">102</span></div>
+            <div class="bar-row"><span class="bar-label">En Curso</span><div class="bar-track"><div class="bar-fill" style="width:19%;background:var(--amber)"></div></div><span class="bar-val">72</span></div>
+            <div class="bar-row"><span class="bar-label">Cerrados</span><div class="bar-track"><div class="bar-fill" style="width:54%;background:#555"></div></div><span class="bar-val">204</span></div>
+          </div>
+          <div class="report-card">
+            <div class="report-card-title">Expedientes por Aseguradora</div>
+            <div class="bar-row"><span class="bar-label">ASSA</span><div class="bar-track"><div class="bar-fill" style="width:38%"></div></div><span class="bar-val">143</span></div>
+            <div class="bar-row"><span class="bar-label">ANCON</span><div class="bar-track"><div class="bar-fill" style="width:25%"></div></div><span class="bar-val">94</span></div>
+            <div class="bar-row"><span class="bar-label">CONANCE</span><div class="bar-track"><div class="bar-fill" style="width:18%"></div></div><span class="bar-val">67</span></div>
+            <div class="bar-row"><span class="bar-label">INTEROCEANICA</span><div class="bar-track"><div class="bar-fill" style="width:12%"></div></div><span class="bar-val">44</span></div>
+            <div class="bar-row"><span class="bar-label">PARTICULAR</span><div class="bar-track"><div class="bar-fill" style="width:7%"></div></div><span class="bar-val">26</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ASEGURADORAS ── -->
+      <div class="view" id="view-aseguradoras">
+        <div class="page-title">Aseguradoras</div>
+        <div class="page-subtitle" style="margin-bottom:20px;">Listado de aseguradoras registradas</div>
+        <div class="card">
+          <table>
+            <thead><tr><th>#</th><th>Nombre</th><th>Teléfono</th><th>Email</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>ASSA</td><td>507-300-0000</td><td>info@assa.com.pa</td></tr>
+              <tr><td>2</td><td>ANCON</td><td>507-300-1111</td><td>info@ancon.com.pa</td></tr>
+              <tr><td>3</td><td>CONANCE</td><td>507-300-2222</td><td>info@conance.com.pa</td></tr>
+              <tr><td>4</td><td>INTEROCEANICA</td><td>507-300-3333</td><td>info@interoceanica.com.pa</td></tr>
+              <tr><td>5</td><td>PARTICULAR</td><td>—</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fabBtn" style="display:none;" onclick="openModal()">+</button>
+
+<!-- MODAL NUEVA AUDIENCIA -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">Nueva Audiencia</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Asegurado</label>
+        <input class="form-control" type="text" placeholder="Nombre del asegurado"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Aseguradora</label>
+        <select class="form-control">
+          <option>ASSA</option><option>ANCON</option><option>CONANCE</option>
+          <option>INTEROCEANICA</option><option>PARTICULAR</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Juzgado</label>
+        <select class="form-control">
+          <option>JUZGADO 5TO (PEDREGAL)</option>
+          <option>JUZGADO 4TO (PEDREGAL)</option>
+          <option>JUZGADO 3RO (PEDREGAL)</option>
+          <option>JUZGADO 1RO (PEDREGAL)</option>
+          <option>ALCALDIA DE PANAMA</option>
+          <option>CHITRE</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hora</label>
+        <input class="form-control" type="time" value="09:00"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Fecha</label>
+        <input class="form-control" type="date"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tipo</label>
+        <input class="form-control" type="text" placeholder="Audiencia oral, Conciliación..."/>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="closeModal()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────
+const AGENDA_DATA = [
+  { aseguradora:'ASSA',          asegurado:'ANTHONY TREJOS',      juzgado:'JUZGADO 5TO (PEDREGAL)', hora:'09:00' },
+  { aseguradora:'ANCON',         asegurado:'LUIS MOLINA',          juzgado:'JUZGADO 4TO (PEDREGAL)', hora:'09:30' },
+  { aseguradora:'ASSA',          asegurado:'KATHERINE KENT',       juzgado:'JUZGADO 5TO (PEDREGAL)', hora:'10:00' },
+  { aseguradora:'CONANCE',       asegurado:'MARTIN ALVARADO',      juzgado:'JUZGADO 1RO (PEDREGAL)', hora:'10:30' },
+  { aseguradora:'PARTICULAR',    asegurado:'JOEL ARAUZ RODRIGUEZ', juzgado:'JUZGADO 3RO (PEDREGAL)', hora:'11:00' },
+  { aseguradora:'INTEROCEANICA', asegurado:'MICHELLE VEGA',        juzgado:'ALCALDIA DE PANAMA',     hora:'14:00' },
+  { aseguradora:'ANCON',         asegurado:'CANDICE HENRY',        juzgado:'CHITRE',                 hora:'15:00' },
+];
+
+const EXP_DATA = [
+  { num:'EXP-001', cliente:'ANTHONY TREJOS',      aseguradora:'ASSA',          juzgado:'JUZGADO 5TO',  estado:'en_curso',  fecha:'2019-01-07' },
+  { num:'EXP-002', cliente:'LUIS MOLINA',          aseguradora:'ANCON',         juzgado:'JUZGADO 4TO',  estado:'pendiente', fecha:'2019-01-07' },
+  { num:'EXP-003', cliente:'KATHERINE KENT',       aseguradora:'ASSA',          juzgado:'JUZGADO 5TO',  estado:'en_curso',  fecha:'2019-01-07' },
+  { num:'EXP-004', cliente:'MARTIN ALVARADO',      aseguradora:'CONANCE',       juzgado:'JUZGADO 1RO',  estado:'pendiente', fecha:'2019-01-06' },
+  { num:'EXP-005', cliente:'JOEL ARAUZ RODRIGUEZ', aseguradora:'PARTICULAR',    juzgado:'JUZGADO 3RO',  estado:'cerrado',   fecha:'2018-12-15' },
+  { num:'EXP-006', cliente:'MICHELLE VEGA',        aseguradora:'INTEROCEANICA', juzgado:'ALCALDIA',     estado:'en_curso',  fecha:'2019-01-03' },
+  { num:'EXP-007', cliente:'CANDICE HENRY',        aseguradora:'ANCON',         juzgado:'CHITRE',       estado:'cerrado',   fecha:'2018-11-20' },
+];
+
+// ── CALENDAR STATE ────────────────────────────────────────────
+let calYear = 2019, calMonth = 0, selectedDay = 7;
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+const DAYS_ES = ['S','M','T','W','T','F','S'];
+const DATES_WITH_EVENTS = [7,14,21,22];
+
+function buildCalendar() {
+  document.getElementById('calMonthLabel').textContent = `${MONTHS[calMonth]} ${calYear}`;
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  DAYS_ES.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-dow'; el.textContent = d; grid.appendChild(el);
+  });
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const el = document.createElement('div');
+    el.className = 'cal-day other-month';
+    el.textContent = prevDays - i; grid.appendChild(el);
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const el = document.createElement('div');
+    let cls = 'cal-day';
+    if (d === selectedDay && calMonth === 0 && calYear === 2019) cls += ' today selected';
+    if (DATES_WITH_EVENTS.includes(d)) cls += ' has-event';
+    el.className = cls; el.textContent = d;
+    el.onclick = () => selectDay(d);
+    grid.appendChild(el);
+  }
+  const filled = firstDay + daysInMonth;
+  const remaining = filled % 7 === 0 ? 0 : 7 - (filled % 7);
+  for (let d = 1; d <= remaining; d++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day other-month'; el.textContent = d; grid.appendChild(el);
+  }
+}
+
+function changeMonth(dir) { calMonth += dir; if (calMonth > 11) { calMonth=0; calYear++; } if (calMonth < 0) { calMonth=11; calYear--; } buildCalendar(); }
+function selectDay(d) { selectedDay = d; buildCalendar(); updateAgendaDate(d); }
+
+function updateAgendaDate(d) {
+  const date = new Date(calYear, calMonth, d);
+  const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+  let label = date.toLocaleDateString('es-PA', opts);
+  label = label.charAt(0).toUpperCase() + label.slice(1);
+  document.getElementById('agendaDateLabel').textContent = label;
+}
+
+// ── AGENDA TABLE ──────────────────────────────────────────────
+function buildAgendaTable() {
+  const tbody = document.getElementById('agendaTableBody');
+  tbody.innerHTML = AGENDA_DATA.map(r => `
+    <tr>
+      <td>${r.aseguradora}</td>
+      <td>${r.asegurado}</td>
+      <td>${r.juzgado}</td>
+      <td>${r.hora}</td>
+    </tr>`).join('');
+}
+
+// ── EXPEDIENTES TABLE ─────────────────────────────────────────
+let expFilter = '', estadoFilter = '';
+function buildExpTable(data) {
+  const tbody = document.getElementById('expTableBody');
+  tbody.innerHTML = data.map(r => `
+    <tr>
+      <td><strong>${r.num}</strong></td>
+      <td>${r.cliente}</td>
+      <td>${r.aseguradora}</td>
+      <td>${r.juzgado}</td>
+      <td><span class="badge badge-${r.estado}">${r.estado.replace('_',' ').toUpperCase()}</span></td>
+      <td>${r.fecha}</td>
+    </tr>`).join('');
+}
+function filterExpedientes(val) {
+  expFilter = val.toLowerCase();
+  applyExpFilter();
+}
+function filterByEstado(val) {
+  estadoFilter = val;
+  applyExpFilter();
+}
+function applyExpFilter() {
+  let d = EXP_DATA.filter(r =>
+    (!expFilter || r.cliente.toLowerCase().includes(expFilter) || r.num.toLowerCase().includes(expFilter)) &&
+    (!estadoFilter || r.estado === estadoFilter)
+  );
+  buildExpTable(d);
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  document.getElementById('fabBtn').style.display = ['agenda','expedientes'].includes(name) ? 'flex' : 'none';
+}
+
+// ── SIDEBAR TOGGLE ────────────────────────────────────────────
+let sidebarOpen = true;
+function toggleSidebar() {
+  sidebarOpen = !sidebarOpen;
+  document.getElementById('sidebar').style.width = sidebarOpen ? 'var(--sidebar-w)' : '0';
+}
+
+// ── MODAL ─────────────────────────────────────────────────────
+function openModal() { document.getElementById('modalOverlay').classList.add('open'); }
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+// ── LOGIN ─────────────────────────────────────────────────────
+function doLogin() {
+  const u = document.getElementById('loginUser').value;
+  const p = document.getElementById('loginPass').value;
+  if (!u || !p) { alert('Ingrese usuario y contraseña'); return; }
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('fabBtn').style.display = 'flex';
+}
+function logout() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('fabBtn').style.display = 'none';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+buildCalendar();
+buildAgendaTable();
+buildExpTable(EXP_DATA);
+updateAgendaDate(7);
+</script>
+</body>
+</html>
