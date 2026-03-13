@@ -1,6 +1,6 @@
 # Sistema de Gestión Legal - API REST
 
-Aplicación Flask + SQLite que expone una API REST para gestionar expedientes legales,
+Aplicación Flask + PyMySQL que expone una API REST para gestionar expedientes legales,
 audiencias, aseguradoras y juzgados, basada en el prototipo de "Agenda del Día".
 
 ## Estructura del Proyecto
@@ -33,11 +33,6 @@ python app.py
 La API queda disponible en `http://localhost:5000`
 
 ## Endpoints
-
-### Autenticación
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| POST | `/api/auth/login` | Obtener token JWT |
 
 **Body login:**
 ```json
